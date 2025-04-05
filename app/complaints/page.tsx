@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Complaint } from "@/types/complaint";
 import Link from "next/link";
 import MainLayout from "@/components/MainLayout";
+import Image from "next/image";
 
 // Separate client component that uses useSearchParams
 function ComplaintsList() {
@@ -23,8 +24,8 @@ function ComplaintsList() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState({
-    category: searchParams.get("category") || "",
-    status: searchParams.get("status") || "",
+    category: searchParams.get("category") || "all",
+    status: searchParams.get("status") || "all",
   });
 
   useEffect(() => {
@@ -33,8 +34,8 @@ function ComplaintsList() {
 
   useEffect(() => {
     setFilter({
-      category: searchParams.get("category") || "",
-      status: searchParams.get("status") || "",
+      category: searchParams.get("category") || "all",
+      status: searchParams.get("status") || "all",
     });
   }, [searchParams]);
 
@@ -43,11 +44,11 @@ function ComplaintsList() {
       setIsLoading(true);
       const queryParams = new URLSearchParams();
       
-      if (filter.category) {
+      if (filter.category && filter.category !== "all") {
         queryParams.append("category", filter.category);
       }
       
-      if (filter.status) {
+      if (filter.status && filter.status !== "all") {
         queryParams.append("status", filter.status);
       }
       
@@ -321,7 +322,7 @@ function ComplaintsList() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   <SelectItem value="potholes">Potholes</SelectItem>
                   <SelectItem value="road-breaks">Road Breaks</SelectItem>
                   <SelectItem value="sewer-issues">Sewer Issues</SelectItem>
@@ -345,7 +346,7 @@ function ComplaintsList() {
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="in-progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
@@ -383,6 +384,18 @@ function ComplaintsList() {
             <Link key={complaint._id} href={`/complaints/${complaint._id}`}>
               <Card className="overflow-hidden h-full hover:shadow-md transition-shadow duration-300">
                 <CardContent className="p-0 flex flex-col h-full">
+                  {complaint.images && complaint.images.length > 0 && (
+                    <div className="relative h-48 w-full">
+                      <Image
+                        src={complaint.images[0]}
+                        alt={complaint.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover"
+                        priority
+                      />
+                    </div>
+                  )}
                   <div className="p-6 flex-grow">
                     <div className="flex justify-between mb-4">
                       <Badge className={getCategoryColor(complaint.category)}>
@@ -430,8 +443,8 @@ function ComplaintsList() {
               router.push("/complaints");
               setSearchTerm("");
               setFilter({
-                category: "",
-                status: ""
+                category: "all",
+                status: "all"
               });
             }}
           >

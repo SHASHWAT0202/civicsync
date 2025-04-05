@@ -10,6 +10,23 @@ import Link from 'next/link';
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+const categories = [
+  "potholes",
+  "road-breaks",
+  "sewer-issues",
+  "water-supply",
+  "electricity",
+  "garbage",
+  "other"
+];
+
+const statuses = [
+  "pending",
+  "in-progress",
+  "completed",
+  "rejected"
+];
+
 interface Complaint {
   _id: string;
   title: string;
@@ -270,12 +287,6 @@ export default function SuperAdminPage() {
     }
   };
 
-  // Add category filter options
-  const categories = ["Infrastructure", "Sanitation", "Public Safety", "Environment", "Transportation", "Other"];
-  
-  // Add status filter options
-  const statuses = ["pending", "in-progress", "completed", "rejected"];
-  
   // Filter complaints based on selected category and status
   const filteredComplaints = complaints.filter(complaint => {
     const matchesCategory = categoryFilter === "all" || complaint.category === categoryFilter;
