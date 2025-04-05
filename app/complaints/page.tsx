@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import { Complaint } from "@/types/complaint";
 import Link from "next/link";
 import MainLayout from "@/components/MainLayout";
 
-export default function ComplaintsPage() {
+// Separate client component that uses useSearchParams
+function ComplaintsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -208,228 +209,252 @@ export default function ComplaintsPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Client-side filtering for search
-    // In a real app, you might want to send this to the API
+    const queryParams = new URLSearchParams(searchParams);
+    
+    if (searchTerm) {
+      queryParams.set("search", searchTerm);
+    } else {
+      queryParams.delete("search");
+    }
+    
+    router.push(`/complaints?${queryParams.toString()}`);
   };
 
   const handleFilterChange = (key: string, value: string) => {
-    // If "all" is selected, treat it as empty string for the filter
-    const filterValue = value === "all" ? "" : value;
+    const queryParams = new URLSearchParams(searchParams);
     
-    setFilter(prev => ({ ...prev, [key]: filterValue }));
-    
-    // Update URL query params
-    const params = new URLSearchParams(searchParams.toString());
-    if (filterValue) {
-      params.set(key, filterValue);
+    if (value) {
+      queryParams.set(key, value);
     } else {
-      params.delete(key);
+      queryParams.delete(key);
     }
     
-    router.push(`/complaints?${params.toString()}`);
+    router.push(`/complaints?${queryParams.toString()}`);
   };
 
-  const filteredComplaints = complaints.filter(complaint => 
-    complaint.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    complaint.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const getCategoryColor = (category: string) => {
-    const categories: Record<string, string> = {
-      potholes: "bg-red-100 text-red-800",
-      streetlights: "bg-yellow-100 text-yellow-800",
-      garbage: "bg-green-100 text-green-800",
-      graffiti: "bg-purple-100 text-purple-800",
-      sidewalks: "bg-blue-100 text-blue-800",
-      noise: "bg-pink-100 text-pink-800",
-      water: "bg-cyan-100 text-cyan-800",
-      electricity: "bg-amber-100 text-amber-800",
-      other: "bg-gray-100 text-gray-800",
-    };
-    return categories[category] || categories.other;
+    switch (category) {
+      case "potholes":
+        return "bg-red-100 text-red-800";
+      case "road-breaks":
+        return "bg-orange-100 text-orange-800";
+      case "sewer-issues":
+        return "bg-yellow-100 text-yellow-800";
+      case "water-supply":
+        return "bg-blue-100 text-blue-800";
+      case "electricity":
+        return "bg-purple-100 text-purple-800";
+      case "garbage":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
   };
 
   const getStatusColor = (status: string) => {
-    const statuses: Record<string, string> = {
-      pending: "bg-yellow-100 text-yellow-800",
-      "in-progress": "bg-blue-100 text-blue-800",
-      completed: "bg-green-100 text-green-800",
-      rejected: "bg-red-100 text-red-800",
-    };
-    return statuses[status] || statuses.pending;
+    switch (status) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "in-progress":
+        return "bg-blue-100 text-blue-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
   };
 
+  // Return the JSX content from your original component
   return (
-    <MainLayout>
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <h1 className="text-3xl font-bold mb-4 md:mb-0 text-gray-900">Community Complaints</h1>
-          <Link href="/map">
-            <Button variant="outline" className="bg-blue-600 text-white hover:bg-blue-700 border-none">View Map</Button>
-          </Link>
-        </div>
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <h1 className="text-3xl font-bold mb-4 md:mb-0 text-gray-900">Community Complaints</h1>
+        <Link href="/map">
+          <Button variant="outline" className="bg-blue-600 text-white hover:bg-blue-700 border-none">View Map</Button>
+        </Link>
+      </div>
 
-        {error && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <AlertTriangle className="h-5 w-5 text-yellow-400" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  {error} - Showing sample data for demonstration purposes.
-                </p>
-              </div>
+      {error && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertTriangle className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                {error} - Showing sample data for demonstration purposes.
+              </p>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="md:col-span-3">
-            <form onSubmit={handleSearch} className="flex w-full max-w-full items-center space-x-2">
-              <Input
-                type="text"
-                placeholder="Search complaints..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 text-gray-900 placeholder:text-gray-500 border-gray-300"
-              />
-              <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </Button>
-            </form>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="md:col-span-3">
+          <form onSubmit={handleSearch} className="flex w-full max-w-full items-center space-x-2">
+            <Input
+              type="text"
+              placeholder="Search complaints..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-grow"
+            />
+            <Button type="submit">
+              <Search className="h-4 w-4 mr-2" />
+              Search
+            </Button>
+          </form>
+        </div>
+        <div className="md:col-span-1">
+          <div className="flex flex-col space-y-4">
             <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
               <Select
                 value={filter.category}
                 onValueChange={(value) => handleFilterChange("category", value)}
               >
-                <SelectTrigger className="bg-blue-600 text-white hover:bg-blue-700 border-none">
-                  <SelectValue placeholder="Category" />
+                <SelectTrigger id="category">
+                  <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
-                <SelectContent className="bg-white">
-                  <SelectItem value="all" className="text-gray-900">All Categories</SelectItem>
-                  <SelectItem value="potholes" className="text-gray-900">Potholes</SelectItem>
-                  <SelectItem value="streetlights" className="text-gray-900">Streetlights</SelectItem>
-                  <SelectItem value="garbage" className="text-gray-900">Garbage</SelectItem>
-                  <SelectItem value="graffiti" className="text-gray-900">Graffiti</SelectItem>
-                  <SelectItem value="sidewalks" className="text-gray-900">Sidewalks</SelectItem>
-                  <SelectItem value="noise" className="text-gray-900">Noise</SelectItem>
-                  <SelectItem value="water" className="text-gray-900">Water</SelectItem>
-                  <SelectItem value="electricity" className="text-gray-900">Electricity</SelectItem>
-                  <SelectItem value="other" className="text-gray-900">Other</SelectItem>
+                <SelectContent>
+                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="potholes">Potholes</SelectItem>
+                  <SelectItem value="road-breaks">Road Breaks</SelectItem>
+                  <SelectItem value="sewer-issues">Sewer Issues</SelectItem>
+                  <SelectItem value="water-supply">Water Supply</SelectItem>
+                  <SelectItem value="electricity">Electricity</SelectItem>
+                  <SelectItem value="garbage">Garbage</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            
             <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
               <Select
                 value={filter.status}
                 onValueChange={(value) => handleFilterChange("status", value)}
               >
-                <SelectTrigger className="bg-blue-600 text-white hover:bg-blue-700 border-none">
-                  <SelectValue placeholder="Status" />
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
-                <SelectContent className="bg-white">
-                  <SelectItem value="all" className="text-gray-900">All Statuses</SelectItem>
-                  <SelectItem value="pending" className="text-gray-900">Pending</SelectItem>
-                  <SelectItem value="in-progress" className="text-gray-900">In Progress</SelectItem>
-                  <SelectItem value="completed" className="text-gray-900">Completed</SelectItem>
-                  <SelectItem value="rejected" className="text-gray-900">Rejected</SelectItem>
+                <SelectContent>
+                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="overflow-hidden">
-                <div className="h-48 bg-gray-200">
-                  <Skeleton className="h-full w-full" />
-                </div>
-                <CardContent className="pt-6">
-                  <Skeleton className="h-6 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/4 mb-4" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3 mb-4" />
-                  <div className="flex justify-between items-center">
-                    <Skeleton className="h-5 w-1/3" />
-                    <Skeleton className="h-5 w-1/4" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredComplaints.length === 0 ? (
-          <div className="text-center py-12">
-            <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-            <h2 className="text-2xl font-bold mb-2 text-gray-900">No Complaints Found</h2>
-            <p className="text-gray-700 mb-6">
-              No complaints match your current filters or search terms.
-            </p>
-            <Button onClick={() => {
-              setSearchTerm("");
-              setFilter({ category: "", status: "" });
-              router.push("/complaints");
-            }} className="bg-blue-600 text-white hover:bg-blue-700">
-              Clear Filters
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredComplaints.map((complaint) => (
-              <Card key={complaint._id} className="overflow-hidden flex flex-col">
-                <div className="h-48 bg-gray-100 flex items-center justify-center">
-                  {complaint.images && complaint.images.length > 0 ? (
-                    <img 
-                      src={complaint.images[0]} 
-                      alt={complaint.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <p className="text-gray-700">No image available</p>
-                  )}
-                </div>
-                <CardContent className="pt-6 flex-1">
-                  <h2 className="text-xl font-bold mb-1 line-clamp-1 text-gray-900">{complaint.title}</h2>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <Badge className={getCategoryColor(complaint.category)}>
-                      {complaint.category.charAt(0).toUpperCase() + complaint.category.slice(1)}
-                    </Badge>
-                    <Badge className={getStatusColor(complaint.status)}>
-                      {complaint.status === "in-progress" 
-                        ? "In Progress" 
-                        : complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1)}
-                    </Badge>
-                  </div>
-                  <p className="text-gray-800 mb-4 line-clamp-3">{complaint.description}</p>
-                  <div className="flex items-center text-sm text-gray-700 mb-2">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    <span className="truncate">{complaint.address || "Location not specified"}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-700">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span>Reported {formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true })}</span>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between items-center pt-0 pb-4">
-                  <div className="flex items-center">
-                    <ThumbsUp className="h-4 w-4 mr-1 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-900">{complaint.votes} supports</span>
-                  </div>
-                  <Button asChild variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700 border-none">
-                    <Link href={`/complaints/${complaint._id}`}>View Details</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
       </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, index) => (
+            <Card key={index} className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="p-6">
+                  <Skeleton className="h-6 w-3/4 mb-4" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : complaints.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {complaints.map((complaint) => (
+            <Link key={complaint._id} href={`/complaints/${complaint._id}`}>
+              <Card className="overflow-hidden h-full hover:shadow-md transition-shadow duration-300">
+                <CardContent className="p-0 flex flex-col h-full">
+                  <div className="p-6 flex-grow">
+                    <div className="flex justify-between mb-4">
+                      <Badge className={getCategoryColor(complaint.category)}>
+                        {complaint.category.charAt(0).toUpperCase() + complaint.category.slice(1).replace(/-/g, ' ')}
+                      </Badge>
+                      <Badge className={getStatusColor(complaint.status)}>
+                        {complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1).replace(/-/g, ' ')}
+                      </Badge>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-gray-900">{complaint.title}</h3>
+                    <p className="text-gray-600 line-clamp-2 text-sm mb-4">{complaint.description}</p>
+                    
+                    <div className="flex items-center text-gray-500 text-sm">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      <span className="truncate">{complaint.address || "Unknown location"}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 mt-auto">
+                    <div className="flex justify-between">
+                      <div className="flex items-center text-gray-500 text-sm">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        <span>{formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true })}</span>
+                      </div>
+                      <div className="flex items-center text-gray-500 text-sm">
+                        <ThumbsUp className="h-4 w-4 mr-1" />
+                        <span>{complaint.votes || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white p-8 text-center rounded-lg shadow">
+          <h3 className="text-xl font-semibold mb-2">No complaints found</h3>
+          <p className="text-gray-600 mb-4">
+            No complaints match your current filters or search criteria.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              router.push("/complaints");
+              setSearchTerm("");
+              setFilter({
+                category: "",
+                status: ""
+              });
+            }}
+          >
+            Clear filters
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function ComplaintsPage() {
+  return (
+    <MainLayout>
+      <Suspense fallback={
+        <div className="container mx-auto py-12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600">Loading complaints...</p>
+        </div>
+      }>
+        <ComplaintsList />
+      </Suspense>
     </MainLayout>
   );
 } 
