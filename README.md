@@ -20,6 +20,26 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Email Notifications
+
+CivicSync now includes email notification features:
+
+1. **User Registration**: Welcome emails are sent when new users register
+2. **Complaint Submission**: Confirmation emails are sent when users submit new complaints
+3. **Status Updates**: Users receive email notifications when admins update the status of their complaints
+
+To configure email settings, create or update your `.env.local` file with the following variables:
+
+```
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your-email@example.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_FROM="CivicSync <noreply@civicsync.com>"
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
