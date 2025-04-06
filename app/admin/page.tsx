@@ -764,6 +764,8 @@ export default function AdminDashboard() {
                   <ComplaintTimer 
                     createdAt={complaint.createdAt} 
                     complaintId={complaint._id}
+                    status={complaint.status}
+                    updatedAt={complaint.updatedAt}
                     onLongDuration={(duration) => handleLongDuration(complaint._id, duration)}
                   />
                 </td>

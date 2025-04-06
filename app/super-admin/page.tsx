@@ -599,6 +599,8 @@ export default function SuperAdminPage() {
                         <ComplaintTimer 
                           createdAt={complaint.createdAt} 
                           complaintId={complaint._id}
+                          status={complaint.status}
+                          updatedAt={complaint.updatedAt}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
