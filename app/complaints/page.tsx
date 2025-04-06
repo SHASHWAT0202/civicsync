@@ -22,7 +22,7 @@ function ComplaintsList() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [filter, setFilter] = useState({
     category: searchParams.get("category") || "all",
     status: searchParams.get("status") || "all",
@@ -30,13 +30,14 @@ function ComplaintsList() {
 
   useEffect(() => {
     fetchComplaints();
-  }, [filter]);
+  }, [filter, searchParams]);
 
   useEffect(() => {
     setFilter({
       category: searchParams.get("category") || "all",
       status: searchParams.get("status") || "all",
     });
+    setSearchTerm(searchParams.get("search") || "");
   }, [searchParams]);
 
   const fetchComplaints = async () => {
@@ -50,6 +51,11 @@ function ComplaintsList() {
       
       if (filter.status && filter.status !== "all") {
         queryParams.append("status", filter.status);
+      }
+      
+      const search = searchParams.get("search");
+      if (search) {
+        queryParams.append("search", search);
       }
       
       // Add a public flag to indicate this is a public request
@@ -210,7 +216,7 @@ function ComplaintsList() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const queryParams = new URLSearchParams(searchParams);
+    const queryParams = new URLSearchParams(searchParams.toString());
     
     if (searchTerm) {
       queryParams.set("search", searchTerm);
@@ -222,9 +228,9 @@ function ComplaintsList() {
   };
 
   const handleFilterChange = (key: string, value: string) => {
-    const queryParams = new URLSearchParams(searchParams);
+    const queryParams = new URLSearchParams(searchParams.toString());
     
-    if (value) {
+    if (value && value !== "all") {
       queryParams.set(key, value);
     } else {
       queryParams.delete(key);
@@ -236,34 +242,34 @@ function ComplaintsList() {
   const getCategoryColor = (category: string) => {
     switch (category) {
       case "potholes":
-        return "bg-red-100 text-red-800";
+        return "bg-red-200 text-red-800 font-medium";
       case "road-breaks":
-        return "bg-orange-100 text-orange-800";
+        return "bg-orange-200 text-orange-800 font-medium";
       case "sewer-issues":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-200 text-yellow-800 font-medium";
       case "water-supply":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-200 text-blue-800 font-medium";
       case "electricity":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-200 text-purple-800 font-medium";
       case "garbage":
-        return "bg-green-100 text-green-800";
+        return "bg-green-200 text-green-800 font-medium";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-200 text-gray-800 font-medium";
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-200 text-yellow-800 font-medium";
       case "in-progress":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-200 text-blue-800 font-medium";
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "bg-green-200 text-green-800 font-medium";
       case "rejected":
-        return "bg-red-100 text-red-800";
+        return "bg-red-200 text-red-800 font-medium";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-200 text-gray-800 font-medium";
     }
   };
 
@@ -292,77 +298,100 @@ function ComplaintsList() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="md:col-span-3">
-          <form onSubmit={handleSearch} className="flex w-full max-w-full items-center space-x-2">
-            <Input
-              type="text"
-              placeholder="Search complaints..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-grow"
-            />
-            <Button type="submit">
-              <Search className="h-4 w-4 mr-2" />
-              Search
-            </Button>
-          </form>
-        </div>
-        <div className="md:col-span-1">
-          <div className="flex flex-col space-y-4">
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <Select
-                value={filter.category}
-                onValueChange={(value) => handleFilterChange("category", value)}
-              >
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="potholes">Potholes</SelectItem>
-                  <SelectItem value="road-breaks">Road Breaks</SelectItem>
-                  <SelectItem value="sewer-issues">Sewer Issues</SelectItem>
-                  <SelectItem value="water-supply">Water Supply</SelectItem>
-                  <SelectItem value="electricity">Electricity</SelectItem>
-                  <SelectItem value="garbage">Garbage</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <Select
-                value={filter.status}
-                onValueChange={(value) => handleFilterChange("status", value)}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
+      <div className="bg-white p-6 shadow-md rounded-lg mb-8 border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="md:col-span-3">
+            <form onSubmit={handleSearch} className="flex w-full max-w-full items-center space-x-2">
+              <Input
+                type="text"
+                placeholder="Search complaints..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-grow py-6 text-base border-gray-300 bg-white text-black"
+              />
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 py-6 px-6 text-base font-medium min-w-[120px]">
+                <Search className="h-5 w-5 mr-2" />
+                Search
+              </Button>
+            </form>
+          </div>
+          <div className="md:col-span-1">
+            <div className="flex flex-col space-y-4">
+              <div>
+                <label htmlFor="category" className="block text-sm font-bold text-gray-800 mb-1">
+                  Category
+                </label>
+                <Select
+                  value={filter.category}
+                  onValueChange={(value) => handleFilterChange("category", value)}
+                >
+                  <SelectTrigger id="category" className="py-6 text-base border-gray-300 bg-white text-black">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-300 shadow-md z-50">
+                    <SelectItem value="all" className="py-3 text-base text-black font-medium">All Categories</SelectItem>
+                    <SelectItem value="potholes" className="py-3 text-base text-black">Potholes</SelectItem>
+                    <SelectItem value="road-breaks" className="py-3 text-base text-black">Road Breaks</SelectItem>
+                    <SelectItem value="sewer-issues" className="py-3 text-base text-black">Sewer Issues</SelectItem>
+                    <SelectItem value="water-supply" className="py-3 text-base text-black">Water Supply</SelectItem>
+                    <SelectItem value="electricity" className="py-3 text-base text-black">Electricity</SelectItem>
+                    <SelectItem value="garbage" className="py-3 text-base text-black">Garbage</SelectItem>
+                    <SelectItem value="other" className="py-3 text-base text-black">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label htmlFor="status" className="block text-sm font-bold text-gray-800 mb-1">
+                  Status
+                </label>
+                <Select
+                  value={filter.status}
+                  onValueChange={(value) => handleFilterChange("status", value)}
+                >
+                  <SelectTrigger id="status" className="py-6 text-base border-gray-300 bg-white text-black">
+                    <SelectValue placeholder="All Statuses" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-300 shadow-md z-50">
+                    <SelectItem value="all" className="py-3 text-base text-black font-medium">All Statuses</SelectItem>
+                    <SelectItem value="pending" className="py-3 text-base text-black">Pending</SelectItem>
+                    <SelectItem value="in-progress" className="py-3 text-base text-black">In Progress</SelectItem>
+                    <SelectItem value="completed" className="py-3 text-base text-black">Completed</SelectItem>
+                    <SelectItem value="rejected" className="py-3 text-base text-black">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      {searchParams.get("search") && (
+        <div className="mb-6 bg-blue-50 border border-blue-200 p-4 rounded-lg shadow-sm">
+          <p className="text-blue-800 font-medium flex items-center">
+            <Search className="h-5 w-5 mr-2" />
+            Search results for: <span className="font-bold ml-2 text-blue-900">{searchParams.get("search")}</span>
+            <Button 
+              variant="link" 
+              className="ml-4 text-blue-600 font-medium" 
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("search");
+                router.push(`/complaints?${params.toString()}`);
+              }}
+            >
+              Clear search
+            </Button>
+          </p>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, index) => (
-            <Card key={index} className="overflow-hidden">
+            <Card key={index} className="overflow-hidden shadow-md">
               <CardContent className="p-0">
+                <div className="h-48 bg-gray-200 animate-pulse"></div>
                 <div className="p-6">
                   <Skeleton className="h-6 w-3/4 mb-4" />
                   <Skeleton className="h-4 w-full mb-2" />
@@ -382,9 +411,9 @@ function ComplaintsList() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {complaints.map((complaint) => (
             <Link key={complaint._id} href={`/complaints/${complaint._id}`}>
-              <Card className="overflow-hidden h-full hover:shadow-md transition-shadow duration-300">
+              <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow duration-300 border border-gray-200">
                 <CardContent className="p-0 flex flex-col h-full">
-                  {complaint.images && complaint.images.length > 0 && (
+                  {complaint.images && complaint.images.length > 0 ? (
                     <div className="relative h-48 w-full">
                       <Image
                         src={complaint.images[0]}
@@ -394,6 +423,10 @@ function ComplaintsList() {
                         className="object-cover"
                         priority
                       />
+                    </div>
+                  ) : (
+                    <div className="h-48 bg-gray-100 flex items-center justify-center">
+                      <p className="text-gray-500">No image available</p>
                     </div>
                   )}
                   <div className="p-6 flex-grow">
@@ -405,24 +438,24 @@ function ComplaintsList() {
                         {complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1).replace(/-/g, ' ')}
                       </Badge>
                     </div>
-                    <h3 className="text-xl font-semibold mb-2 text-gray-900">{complaint.title}</h3>
-                    <p className="text-gray-600 line-clamp-2 text-sm mb-4">{complaint.description}</p>
+                    <h3 className="text-xl font-bold mb-2 text-gray-900">{complaint.title}</h3>
+                    <p className="text-gray-700 line-clamp-2 text-sm mb-4">{complaint.description}</p>
                     
-                    <div className="flex items-center text-gray-500 text-sm">
+                    <div className="flex items-center text-gray-600 text-sm">
                       <MapPin className="h-4 w-4 mr-1" />
-                      <span className="truncate">{complaint.address || "Unknown location"}</span>
+                      <span className="truncate font-medium">{complaint.address || "Unknown location"}</span>
                     </div>
                   </div>
                   
-                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 mt-auto">
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 mt-auto">
                     <div className="flex justify-between">
-                      <div className="flex items-center text-gray-500 text-sm">
+                      <div className="flex items-center text-gray-600 text-sm">
                         <Calendar className="h-4 w-4 mr-1" />
-                        <span>{formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true })}</span>
+                        <span className="font-medium">{formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true })}</span>
                       </div>
-                      <div className="flex items-center text-gray-500 text-sm">
+                      <div className="flex items-center text-gray-600 text-sm">
                         <ThumbsUp className="h-4 w-4 mr-1" />
-                        <span>{complaint.votes || 0}</span>
+                        <span className="font-medium">{complaint.votes || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -432,9 +465,9 @@ function ComplaintsList() {
           ))}
         </div>
       ) : (
-        <div className="bg-white p-8 text-center rounded-lg shadow">
-          <h3 className="text-xl font-semibold mb-2">No complaints found</h3>
-          <p className="text-gray-600 mb-4">
+        <div className="bg-white p-8 text-center rounded-lg shadow-md border border-gray-200">
+          <h3 className="text-xl font-bold mb-2">No complaints found</h3>
+          <p className="text-gray-700 mb-4">
             No complaints match your current filters or search criteria.
           </p>
           <Button
@@ -447,6 +480,7 @@ function ComplaintsList() {
                 status: "all"
               });
             }}
+            className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 text-base"
           >
             Clear filters
           </Button>
