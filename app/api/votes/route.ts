@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/mongodb";
-import Vote from "@/models/Vote";
-import Complaint from "@/models/Complaint";
 import { ObjectId } from "mongodb";
 
 // POST /api/votes - Add a vote to a complaint

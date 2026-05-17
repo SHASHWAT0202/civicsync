@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { db } = await connectToDatabase();
-    const userProfile = await db.collection("users").findOne({ userId: user.id });
+    const userProfile = await db.collection("users").findOne({ clerkId: user.id });
 
     if (!userProfile) {
       return NextResponse.json(
@@ -59,7 +59,7 @@ export async function PUT(req: NextRequest) {
     const { db } = await connectToDatabase();
     
     // Check if user exists
-    const existingUser = await db.collection("users").findOne({ userId: user.id });
+    const existingUser = await db.collection("users").findOne({ clerkId: user.id });
     
     if (!existingUser) {
       return NextResponse.json(
@@ -87,7 +87,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const result = await db.collection("users").updateOne(
-      { userId: user.id },
+      { clerkId: user.id },
       updateData
     );
 
@@ -99,7 +99,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Get updated user
-    const updatedUser = await db.collection("users").findOne({ userId: user.id });
+    const updatedUser = await db.collection("users").findOne({ clerkId: user.id });
 
     return NextResponse.json(updatedUser);
   } catch (error) {
