@@ -6,11 +6,11 @@ import { ObjectId } from "mongodb";
 // POST /api/complaints/[id]/votes - Vote on a complaint
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await currentUser();
-    
+
     if (!user || !user.id) {
       return NextResponse.json(
         { error: "Authentication required" },
@@ -18,7 +18,7 @@ export async function POST(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     
     // Validate complaint ID
     if (!ObjectId.isValid(id)) {
@@ -107,11 +107,11 @@ export async function POST(
 // DELETE /api/complaints/[id]/votes - Remove vote from a complaint
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await currentUser();
-    
+
     if (!user || !user.id) {
       return NextResponse.json(
         { error: "Authentication required" },
@@ -119,7 +119,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     
     // Validate complaint ID
     if (!ObjectId.isValid(id)) {
@@ -184,10 +184,10 @@ export async function DELETE(
 // Get votes for a complaint
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     // Validate complaint ID
     if (!ObjectId.isValid(id)) {
@@ -212,7 +212,7 @@ export async function GET(
     }
 
     // Get user's vote status
-    const { userId } = auth();
+    const { userId } = await auth();
     let hasVoted = false;
     
     if (userId) {

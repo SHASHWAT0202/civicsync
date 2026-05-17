@@ -214,9 +214,8 @@ export async function POST(req: NextRequest) {
         await sendComplaintSubmissionEmail(
           userEmail,
           user.firstName || 'User',
-          title,
           result.insertedId.toString(),
-          req.nextUrl.origin
+          title,
         );
         console.log(`Confirmation email sent to ${userEmail} for complaint: ${title}`);
       }

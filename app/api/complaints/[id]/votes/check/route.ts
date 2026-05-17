@@ -6,19 +6,19 @@ import { currentUser } from "@clerk/nextjs/server";
 // GET /api/complaints/[id]/votes/check - Check if user has voted
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await currentUser();
-    
+
     if (!user || !user.id) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       );
     }
-    
-    const id = params.id;
+
+    const { id } = await params;
     
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(

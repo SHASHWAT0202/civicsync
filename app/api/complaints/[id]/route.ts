@@ -7,10 +7,10 @@ import { sendComplaintStatusUpdateEmail } from "@/lib/email";
 // GET /api/complaints/[id] - Get a specific complaint
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
     
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -45,19 +45,19 @@ export async function GET(
 // PUT /api/complaints/[id] - Update a complaint
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await currentUser();
-    
+
     if (!user) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       );
     }
-    
-    const id = params.id;
+
+    const { id } = await params;
     
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -124,19 +124,19 @@ export async function PUT(
 // DELETE /api/complaints/[id] - Delete a complaint
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await currentUser();
-    
+
     if (!user) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       );
     }
-    
-    const id = params.id;
+
+    const { id } = await params;
     
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -197,7 +197,7 @@ export async function DELETE(
 // PATCH /api/complaints/[id] - Update complaint status and other properties
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await currentUser();
@@ -235,8 +235,8 @@ export async function PATCH(
       }
     }
 
-    const id = params.id;
-    
+    const { id } = await params;
+
     // Validate complaint ID
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -246,7 +246,7 @@ export async function PATCH(
     }
 
     const { db } = await connectToDatabase();
-    
+
     // Get the current complaint
     const complaint = await db
       .collection("complaints")
@@ -303,11 +303,10 @@ export async function PATCH(
           await sendComplaintStatusUpdateEmail(
             complainantData.email,
             complainantData.firstName || 'User',
+            id,
             complaint.title,
             data.status,
-            id,
             data.adminNotes || '',
-            req.nextUrl.origin
           );
           console.log(`Status update email sent to ${complainantData.email} for complaint: ${complaint.title}`);
         }

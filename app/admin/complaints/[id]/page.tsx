@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useUser } from "@clerk/nextjs";
 import MainLayout from "@/components/MainLayout";
 import { useRouter } from "next/navigation";
@@ -51,7 +51,8 @@ interface Feedback {
   user?: User;
 }
 
-export default function ComplaintDetailPage({ params }: { params: { id: string } }) {
+export default function ComplaintDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const [complaint, setComplaint] = useState<Complaint | null>(null);
@@ -77,11 +78,11 @@ export default function ComplaintDetailPage({ params }: { params: { id: string }
     } else if (isLoaded && !isSignedIn) {
       router.push("/sign-in");
     }
-  }, [isLoaded, isSignedIn, user, router, params.id]);
+  }, [isLoaded, isSignedIn, user, router, id]);
 
   const fetchComplaint = async () => {
     try {
-      const response = await fetch(`/api/complaints/${params.id}`);
+      const response = await fetch(`/api/complaints/${id}`);
       
       if (!response.ok) {
         throw new Error("Failed to fetch complaint");
@@ -121,7 +122,7 @@ export default function ComplaintDetailPage({ params }: { params: { id: string }
 
   const fetchFeedbacks = async () => {
     try {
-      const response = await fetch(`/api/feedbacks?complaintId=${params.id}`);
+      const response = await fetch(`/api/feedbacks?complaintId=${id}`);
       
       if (!response.ok) {
         throw new Error("Failed to fetch feedbacks");
@@ -138,9 +139,9 @@ export default function ComplaintDetailPage({ params }: { params: { id: string }
     try {
       setIsStatusUpdating(true);
       
-      console.log(`Updating complaint ${params.id} status to: ${newStatus}`);
+      console.log(`Updating complaint ${id} status to: ${newStatus}`);
       
-      const response = await fetch(`/api/complaints/${params.id}`, {
+      const response = await fetch(`/api/complaints/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -175,7 +176,7 @@ export default function ComplaintDetailPage({ params }: { params: { id: string }
     if (!complaint) return;
     
     try {
-      const response = await fetch(`/api/complaints/${params.id}`, {
+      const response = await fetch(`/api/complaints/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -199,7 +200,7 @@ export default function ComplaintDetailPage({ params }: { params: { id: string }
     if (!complaint) return;
     
     try {
-      const response = await fetch(`/api/complaints/${params.id}`, {
+      const response = await fetch(`/api/complaints/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -236,7 +237,7 @@ export default function ComplaintDetailPage({ params }: { params: { id: string }
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          complaintId: params.id,
+          complaintId: id,
           content: newFeedback,
         }),
       });

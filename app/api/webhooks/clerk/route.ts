@@ -8,7 +8,7 @@ import { sendRegistrationEmail } from "@/lib/email";
 // This is the Clerk webhook handler that syncs user data with our database
 export async function POST(req: Request) {
   // Get the headers
-  const headerPayload = headers();
+  const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");

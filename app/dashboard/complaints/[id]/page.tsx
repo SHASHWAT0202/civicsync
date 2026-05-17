@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useUser } from "@clerk/nextjs";
 import MainLayout from "@/components/MainLayout";
 import { useRouter } from "next/navigation";
@@ -42,7 +42,8 @@ interface Feedback {
   };
 }
 
-export default function ComplaintDetailPage({ params }: { params: { id: string } }) {
+export default function ComplaintDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: complaintId } = use(params);
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const [complaint, setComplaint] = useState<Complaint | null>(null);
@@ -52,7 +53,6 @@ export default function ComplaintDetailPage({ params }: { params: { id: string }
   const [newFeedback, setNewFeedback] = useState("");
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
-  const complaintId = params.id; // Store id to avoid multiple access to params.id
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {

@@ -5,19 +5,19 @@ import { currentUser } from "@clerk/nextjs/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await currentUser();
-    
+
     if (!user || !user.id) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       );
     }
-    
-    const id = params.id;
+
+    const { id } = await params;
     
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -70,7 +70,7 @@ export async function POST(
         { $inc: { votes: 1 } },
         { returnDocument: "after" }
       );
-    
+
     // Update user rewards for receiving a vote
     try {
       await fetch(`${request.nextUrl.origin}/api/users/rewards`, {
@@ -86,9 +86,9 @@ export async function POST(
       console.error("Error updating rewards:", rewardError);
       // Continue even if reward update fails
     }
-    
+
     return NextResponse.json({
-      votes: result.value.votes,
+      votes: result?.votes ?? 0,
       message: "Vote recorded successfully",
     });
   } catch (error) {
@@ -102,19 +102,19 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await currentUser();
-    
+
     if (!user || !user.id) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       );
     }
-    
-    const id = params.id;
+
+    const { id } = await params;
     
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -147,19 +147,19 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await currentUser();
-    
+
     if (!user || !user.id) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       );
     }
-    
-    const id = params.id;
+
+    const { id } = await params;
     
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -211,9 +211,9 @@ export async function DELETE(
         { $inc: { votes: -1 } },
         { returnDocument: "after" }
       );
-    
+
     return NextResponse.json({
-      votes: result.value.votes,
+      votes: result?.votes ?? 0,
       message: "Vote removed successfully",
     });
   } catch (error) {
