@@ -1,95 +1,105 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ThumbsUp, MapPin, ArrowRight, Clock } from "lucide-react";
 
 interface Complaint {
   _id: string;
   title: string;
   description: string;
   category: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'rejected';
-  location: {
-    address?: string;
-  };
+  status: "pending" | "in-progress" | "completed" | "rejected";
+  location: { address?: string };
   images: string[];
   votes: number;
   createdAt: string;
 }
 
+const statusConfig: Record<
+  string,
+  { label: string; bg: string; text: string; dot: string }
+> = {
+  pending: {
+    label: "Pending",
+    bg: "bg-amber-500/15",
+    text: "text-amber-500",
+    dot: "bg-amber-500",
+  },
+  "in-progress": {
+    label: "In Progress",
+    bg: "bg-blue-500/15",
+    text: "text-blue-400",
+    dot: "bg-blue-400",
+  },
+  completed: {
+    label: "Completed",
+    bg: "bg-emerald-500/15",
+    text: "text-emerald-500",
+    dot: "bg-emerald-500",
+  },
+  rejected: {
+    label: "Rejected",
+    bg: "bg-red-500/15",
+    text: "text-red-400",
+    dot: "bg-red-400",
+  },
+};
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor(diff / 60000);
+  if (d > 0) return `${d}d ago`;
+  if (h > 0) return `${h}h ago`;
+  return `${m}m ago`;
+}
+
 export default function FeaturedComplaints() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function fetchComplaints() {
       try {
         setIsLoading(true);
-        // Fetch public complaints with limit of 3
-        const response = await fetch('/api/complaints?public=true&limit=3');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch complaints');
-        }
-        
+        const response = await fetch("/api/complaints?public=true&limit=3");
+        if (!response.ok) throw new Error("Failed to fetch complaints");
         const data = await response.json();
         setComplaints(data.complaints);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error fetching complaints:', err);
-        setError('Unable to load complaints. Please try again later.');
+      } catch {
+        setError("Unable to load complaints. Please try again later.");
+      } finally {
         setIsLoading(false);
       }
     }
-
     fetchComplaints();
   }, []);
 
-  // Get status class based on complaint status
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  // Format status for display
-  const formatStatus = (status: string) => {
-    switch (status) {
-      case 'in-progress':
-        return 'In Progress';
-      default:
-        return status.charAt(0).toUpperCase() + status.slice(1);
-    }
-  };
-
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <Skeleton className="h-48 w-full" />
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-2">
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-6 w-24" />
+          <div
+            key={i}
+            className="rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--surface)]"
+          >
+            <Skeleton className="h-48 w-full rounded-none" />
+            <div className="p-5 space-y-3">
+              <div className="flex justify-between">
+                <Skeleton className="h-5 w-20 rounded-full" />
+                <Skeleton className="h-5 w-20 rounded-full" />
               </div>
-              <Skeleton className="h-6 w-full mb-2" />
-              <Skeleton className="h-16 w-full mb-4" />
-              <div className="flex justify-between items-center">
-                <Skeleton className="h-5 w-20" />
-                <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <div className="flex justify-between pt-1">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-20" />
               </div>
             </div>
           </div>
@@ -99,63 +109,106 @@ export default function FeaturedComplaints() {
   }
 
   if (error) {
-    return <div className="text-center text-red-500">{error}</div>;
+    return (
+      <div className="text-center py-8 text-red-400 text-sm">{error}</div>
+    );
   }
 
   if (complaints.length === 0) {
     return (
-      <div className="text-center text-gray-500 py-8">
-        No complaints found. Be the first to report an issue in your community!
+      <div className="text-center text-[var(--text-muted)] py-12 text-sm">
+        No complaints yet. Be the first to report an issue in your community!
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-      {complaints.map((complaint) => (
-        <div key={complaint._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="h-48 bg-gray-200 relative">
-            {complaint.images && complaint.images.length > 0 ? (
-              <Image 
-                src={complaint.images[0]} 
-                alt={complaint.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 33vw"
-                className="object-cover"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                <span>No Image Available</span>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {complaints.map((complaint, i) => {
+        const status = statusConfig[complaint.status] ?? statusConfig.pending;
+        return (
+          <motion.div
+            key={complaint._id}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.5,
+              delay: i * 0.1,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            whileHover={{ y: -6 }}
+            className="group rounded-2xl overflow-hidden bg-[var(--surface)] border border-[var(--border)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-shadow"
+          >
+            {/* Image */}
+            <div className="h-48 relative bg-[var(--surface-3)] overflow-hidden">
+              {complaint.images?.length > 0 ? (
+                <Image
+                  src={complaint.images[0]}
+                  alt={complaint.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[var(--text-muted)]">
+                  <div className="w-12 h-12 rounded-xl bg-[var(--surface-2)] flex items-center justify-center">
+                    <MapPin className="w-6 h-6 opacity-40" />
+                  </div>
+                  <span className="text-xs opacity-60">No image</span>
+                </div>
+              )}
+              {/* Category badge overlay */}
+              <div className="absolute top-3 left-3">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-black/50 backdrop-blur-sm text-white border border-white/10">
+                  {complaint.category}
+                </span>
               </div>
-            )}
-          </div>
-          <div className="p-6">
-            <div className="flex justify-between items-start mb-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {complaint.category}
-              </span>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(complaint.status)}`}>
-                {formatStatus(complaint.status)}
-              </span>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">{complaint.title}</h3>
-            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-              {complaint.description}
-            </p>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center text-gray-500 text-sm">
-                <svg className="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                </svg>
-                {complaint.votes} votes
+
+            {/* Content */}
+            <div className="p-5 space-y-3">
+              {/* Status + time */}
+              <div className="flex items-center justify-between">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${status.bg} ${status.text}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                  {status.label}
+                </span>
+                <span className="flex items-center gap-1 text-[var(--text-muted)] text-xs">
+                  <Clock className="w-3 h-3" />
+                  {timeAgo(complaint.createdAt)}
+                </span>
               </div>
-              <Link href={`/dashboard/complaints/${complaint._id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View Details
-              </Link>
+
+              {/* Title */}
+              <h3 className="font-semibold text-[var(--text-primary)] line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                {complaint.title}
+              </h3>
+
+              {/* Description */}
+              <p className="text-sm text-[var(--text-muted)] line-clamp-2 leading-relaxed">
+                {complaint.description}
+              </p>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-1 border-t border-[var(--border)]">
+                <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-xs">
+                  <ThumbsUp className="w-3.5 h-3.5" />
+                  <span>{complaint.votes} votes</span>
+                </div>
+                <Link
+                  href={`/dashboard/complaints/${complaint._id}`}
+                  className="group/link inline-flex items-center gap-1 text-xs font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                >
+                  View Details
+                  <ArrowRight className="w-3 h-3 group-hover/link:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
             </div>
-          </div>
-        </div>
-      ))}
+          </motion.div>
+        );
+      })}
     </div>
   );
-} 
+}
